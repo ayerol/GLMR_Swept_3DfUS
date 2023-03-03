@@ -1,2 +1,2 @@
 # GLMR_Swept_3DfUS
-General Linear Model-Regularized low-rank factorization of Swept-3D functional UltraSound
+GLM-Regularized low-rank factorization for extracting functional response from Swept-3D Functional UltraSound
