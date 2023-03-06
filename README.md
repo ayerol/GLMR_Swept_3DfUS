@@ -5,4 +5,4 @@ This package reproduces the results of the paper titled "GLM-Regularized Low-Ran
 
 All codes are written in MATLAB. CVX should be installed (http://cvxr.com/cvx/doc/install.html) for using this repository.
 
-Contact [Dr. Ken Lunde](mailto:a.erol@tudelft.nl) for any questions.
+Contact [Aybüke Erol](mailto:a.erol@tudelft.nl) for any questions.
