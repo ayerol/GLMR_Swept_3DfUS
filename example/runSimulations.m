@@ -29,7 +29,7 @@ load('../data/tarr.mat'); % matrix of size Ny x T (# slices x time points)
 load('../data/stim_on_off_times.mat'); % in terms of milliseconds
 
 % Add the functions to search path
-addpath(genpath('..functions/'))
+addpath(genpath('../functions/'))
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%% User Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
