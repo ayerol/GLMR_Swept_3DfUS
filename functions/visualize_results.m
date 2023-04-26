@@ -5,34 +5,36 @@ rank = size(U,2);
 
 for r = 1:rank
 
-    figure;
-    if r == 1
-        plot(t_axis,V(:,r),'LineWidth',5,'Color',cmap(r,:));
-    else
-        p = plot(t_axis,V(:,r),'o','Color',cmap(r,:));
-        p.MarkerFaceColor = cmap(2,:);
-        p.MarkerSize = 8;
+    if ~isempty(V)
+        figure;
+        if r == 1
+            plot(t_axis,V(:,r),'LineWidth',5,'Color',cmap(r,:));
+        else
+            p = plot(t_axis,V(:,r),'o','Color',cmap(r,:));
+            p.MarkerFaceColor = cmap(2,:);
+            p.MarkerSize = 7;
+        end
+        set(gca,'FontSize',26); xlabel('Time (s)'); xticks(0:30:180);
+        xlim([0 180]);
+        set(gca,'fontname','times')
+        % ylabel('Amplitude')
+    
+        hold on;
+        if r == 1
+            ymax = 1.03*max(V(:,1)); ymin = 0;
+        else
+            ymax = 4.9; ymin = -4;
+        end
+    
+        for i = 1:6
+            p3 = fill([stim_times(i*2-1) stim_times(i*2-1) ...
+                stim_times(i*2) stim_times(i*2)],...
+                [ymin ymax ymax ymin],'r','HandleVisibility','off');
+            set(p3,'facealpha',.1);
+            set(p3,'EdgeColor','none');
+        end
+        ylim([ymin ymax]);
     end
-    set(gca,'FontSize',26); xlabel('Time (s)'); xticks(0:30:180);
-    xlim([0 180]);
-    set(gca,'fontname','times')
-    ylabel('Amplitude')
-
-    hold on;
-    if r == 1
-        ymax = 2e-5; ymin = 0;
-    else
-        ymax = 2.5e5; ymin = -2e5;
-    end
-
-    for i = 1:6
-        p3 = fill([stim_times(i*2-1) stim_times(i*2-1) ...
-            stim_times(i*2) stim_times(i*2)],...
-            [ymin ymax ymax ymin],'r','HandleVisibility','off');
-        set(p3,'facealpha',.1);
-        set(p3,'EdgeColor','none');
-    end
-    ylim([ymin ymax]);
 
     figure;
     h = slice(permute(reshape(U(:,r),Nz,Nx,Ny),[1 3 2]),1:Ny,[],[]);
@@ -44,8 +46,9 @@ for r = 1:rank
     zlabel('Depth','FontSize',25)
     ylabel('Width','FontSize',25)
     set(gca,'FontSize',22);
-    alphamap('increase',.05)
+    alphamap('increase',.1) %.05 in paper figures
     colormap parula;
+    caxis([-.005 max(U(:,r))]);
 
     if r == 1
         cb = colorbar;

@@ -3,7 +3,7 @@
 
 % Author: Aybuke Erol (a.erol@tudelft.nl)
 
-% Date: 03.03.2023
+% Date: 25.04.2023
 
 
 % References
@@ -220,7 +220,7 @@ f.Position = [440 377 560 200];
 
 basis_shift = 25; num_basis = 10; % shift the HRF parameters for every new
 % column of the design matrix
-bb = generate_dictionary(Fs,basis_shift,num_basis);
+bb = generate_dictionary(Fs,basis_shift,num_basis); % bb = hrf';
 cmap = parula(num_basis); figure;
 for i = 1:num_basis
     plot(0:1/Fs:8,bb(:,i)/max(bb(:,i)),'LineWidth',1.5,'Color',...
@@ -241,59 +241,57 @@ figure; plot(t_axis,design_matrix,'LineWidth',1.5); set(gca,'FontSize',12);
 xlabel('Time (s)'); title('Design Matrix');
 
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CVX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %%%%% Parameters %%%%%
-lambda_1 = 1000; % GLM regularization
+lambda_1 = .5; % GLM regularization
 lambda_2 = 1e5; % sparsity of GLM coefficients
-epsilon = 2; % iteration-stopping criteria
-maxit = 100; % max. number of iterations if the algorithm does not converge
+epsilon = 1e-3; % iteration-stopping criteria
+maxit = 5; % max number of iterations if the algorithm doesnot converge
 
 %%%%% Start the Algorithm %%%%%
-Y = Mm;
-idx = ~isnan(Y); % observed indices
-U = rand(size(Y,1),rank); % start with random space matrix
-Y_zeros = Y;
-Y_zeros(isnan(Y)) = 0;
-G = [1; zeros(size(design_matrix,2)-1,1)]; % initialize GLM coefficients
+idx = ~isnan(Mm); % observed indices
+G = zeros(size(design_matrix,2),1);
+G(randi([1,10])) = 1; % randomly initialize GLM coefficients
+V = [design_matrix*G rand(size(Mm,2),1)]; % start with time
 
-for repeat = 1:maxit
+for it = 1:maxit
 
-    if repeat > 1
-        U_old = U;
-        V_old = V;
+    if it > 1
+        U_prev = U;
+        V_prev = V;
     end
+
+    cvx_begin quiet
+    variable U(size(Mm,1),rank)
+    minimize(myfunc(Mm,U,V,idx));
+    cvx_end
 
     cvx_begin quiet
     variable V(size(Mm,2),rank)
     minimize(myfunc(Mm,U,V,idx) + lambda_1 * ...
-        norm(V(:,1)-design_matrix*G,'fro'));
+        frosquared(V(:,1)-design_matrix*G));
     cvx_end
 
     cvx_begin quiet
     variable G(num_basis)
-    minimize(lambda_1 * norm(V(:,1)-design_matrix*G,'fro') + ...
+    minimize(lambda_1 * frosquared(V(:,1)-design_matrix*G) + ...
         lambda_2 * norm(G,1));
     cvx_end
 
-    U = Y_zeros*pinv(V');
+    if it > 1
 
-    if repeat > 1
-
-        delta_u = norm(U_old-U,'fro')/norm(U,'fro');
-        delta_v = norm(V_old-V,'fro')/norm(V,'fro');
+        delta_u = frosquared(U_prev-U)/frosquared(U);
+        delta_v = frosquared(V_prev-V)/frosquared(V);
 
         if delta_u + delta_v < epsilon
             break;
         end
 
     end
-
-    lambda_1 = lambda_1 / 5; % lower the intensity of GLM-regularization
-    % at each iteration
-
-    % Uncomment to visualize intermediate iterations
+    
+    % % Uncomment below to visualize intermediate iterations
     % for r = 1:rank
     %     figure;
     %     h = slice(permute(reshape(U(:,r),Nz,Nx,Ny),[1 3 2]),1:Ny,[],[]);
@@ -301,7 +299,7 @@ for repeat = 1:maxit
     %         'FaceColor','interp',...
     %         'FaceAlpha','interp')
     %     alpha('color')
-    %
+    % 
     %     figure; plot(V(:,r));
     % end
 
@@ -319,5 +317,12 @@ visualize_results(U,V,t_axis,stim_times,Nz,Nx,Ny);
 
 function cost = myfunc(Mm,U,V,idx)
 rec_Mm = U*V';
-cost = norm(rec_Mm(idx) - Mm(idx),'fro');
+cost = sum(sum_square_abs(rec_Mm(idx)-Mm(idx)));
 end
+
+function cost = frosquared(Y)
+cost = sum(sum_square_abs(Y));
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
